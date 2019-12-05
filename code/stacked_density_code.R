@@ -4,6 +4,11 @@ library(imputeTS)
 cbPalette <- c("#999999", "#E69F00", "#56B4E9", "#009E73",
                "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
 
+stages <- c('L2o', 'L2', 'L3', 'L4', 'L5', 'L6')
+prov.labs <- c('Northwest Territories', 'Quebec', 
+               'New Brunswick', 'Ontario', 'Lab-Reared')
+names(prov.labs) <- levels(dev$prov)
+
 sims.all.df <- read.csv('sd_data.csv')
 
 sadf.tt.lst <- lapply(1:nrow(sims.all.df), function(x) {
