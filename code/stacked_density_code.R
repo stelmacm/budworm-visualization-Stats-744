@@ -5,9 +5,10 @@ cbPalette <- c("#999999", "#E69F00", "#56B4E9", "#009E73",
                "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
 
 stages <- c('L2o', 'L2', 'L3', 'L4', 'L5', 'L6')
+prov.names <- c('in', 'qc', 'nb', 'on', 'ip')
 prov.labs <- c('Northwest Territories', 'Quebec', 
                'New Brunswick', 'Ontario', 'Lab-Reared')
-names(prov.labs) <- levels(dev$prov)
+names(prov.labs) <- c(prov.names)
 
 sims.all.df <- read.csv('sd_data.csv')
 
@@ -28,6 +29,9 @@ sadf.tt[,c(stages, 'Pupa')] <- round(sadf.tt[,c(stages, 'Pupa')], 2)
 
 names(sadf.tt)[1] <- 'Date'
 sadf.tt$Province <- toupper(sadf.tt$prov)
+sadf.tt$prov <- factor(sadf.tt$prov, c('nb', 'on', 'qc', 'in'))
+sadf.tt$stage <- factor(sadf.tt$stage, levels = c(stages, 'Pupa'))
+sadf.tt$Date <- as.Date(sadf.tt$Date)
 
 g <- ggplot(data=subset(sadf.tt, year == 2014), 
             aes(x=Date, y = proportion, group=stage, fill=stage,
@@ -39,13 +43,11 @@ g <- ggplot(data=subset(sadf.tt, year == 2014),
   theme(panel.grid.major = element_blank(), 
         panel.grid.minor = element_blank(),
         axis.title.y = element_text(margin = margin(t = 0, r = 20, b = 0, l = 0))) +
-  #facet_wrap(~prov, scales = 'free_x', ncol = 1, 
-  #           labeller = labeller(prov = prov.labs)) +
   facet_grid(prov~., scales = 'free_x',  
              labeller = labeller(prov = prov.labs)) +
   labs(y = 'Proportion of Population in Stage', 
        fill = 'Larval Stage', x = 'Date', 
-       title = '2014 Spruce Budworm Development by Location') +
+       title = 'Spruce Budworm Development by Location') +
   guides(alpha = FALSE)
 
 ggplotly(g, tooltip = c("Date", "Province", stages, "Pupa")) %>%
