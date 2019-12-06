@@ -6,17 +6,16 @@ library(lubridate)
 library(RColorBrewer)
 library(imputeTS)
 
-sims.all.df <- readr::read_csv("https://raw.githubusercontent.com/stelmacm/budwormvisualizationStats744/master/datasets/sd_data.csv")
-
-prov.names <- c('in','qc','nb','on','ip')
-stages <- c('L2o', 'L2', 'L3', 'L4', 'L5', 'L6')
-prov.labs <- c('Northwest Territories', 'Quebec', 
-               'New Brunswick', 'Ontario', 'Lab-Reared')
-
-
-
 cbPalette <- c("#999999", "#E69F00", "#56B4E9", "#009E73",
                "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
+
+stages <- c('L2o', 'L2', 'L3', 'L4', 'L5', 'L6')
+prov.names <- c('in', 'qc', 'nb', 'on', 'ip')
+prov.labs <- c('Northwest Territories', 'Quebec', 
+               'New Brunswick', 'Ontario', 'Lab-Reared')
+names(prov.labs) <- c(prov.names)
+
+sims.all.df <-readr::read_csv('https://raw.githubusercontent.com/stelmacm/budwormvisualizationStats744/master/datasets/sd_data.csv')
 
 sadf.tt.lst <- lapply(1:nrow(sims.all.df), function(x) {
   row <- sims.all.df[x,]
@@ -30,13 +29,14 @@ sadf.tt.lst <- lapply(1:nrow(sims.all.df), function(x) {
   row <- as.data.frame(row)
   return(row)
 })
-
 sadf.tt <- do.call('rbind', sadf.tt.lst)
-
 sadf.tt[,c(stages, 'Pupa')] <- round(sadf.tt[,c(stages, 'Pupa')], 2)
 
 names(sadf.tt)[1] <- 'Date'
 sadf.tt$Province <- toupper(sadf.tt$prov)
+sadf.tt$prov <- factor(sadf.tt$prov, c('nb', 'on', 'qc', 'in'))
+sadf.tt$stage <- factor(sadf.tt$stage, levels = c(stages, 'Pupa'))
+sadf.tt$Date <- as.Date(sadf.tt$Date)
 
 ui <- fluidPage(
   titlePanel("Stacked Density Plot for the Inputted Year"),
@@ -85,3 +85,4 @@ server <- function(input, output){
 }
 
 shinyApp(ui, server)
+
