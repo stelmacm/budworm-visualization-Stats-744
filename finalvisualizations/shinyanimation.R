@@ -4,19 +4,21 @@ library(tidyverse)
 library(gapminder)
 library(gganimate)
 library(shiny)
+library(grid)
+library(colorspace)
 
-cbPalette <- c( "#999999", "#E69F00", "#56B4E9", "#009E73",
-               "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
+#Set up palette and import and data and factor
+cbPalette <- rev(sequential_hcl(7, 'BurgYl'))
 
 newdata <- readr::read_csv("https://raw.githubusercontent.com/stelmacm/budwormvisualizationStats744/master/datasets/ttm_tall2.csv")
-head(newdata)
+
 
 newdata$prov <-sapply(newdata$prov, toupper)
 newdata$prov <- factor(newdata$prov)
 newdata$temp <- factor(newdata$temp)
 newdata$individual <- factor(newdata$individual)
 newdata$stage <- factor(newdata$stage)
-head(newdata)
+
 
 
 #Create the Shiny App
@@ -25,7 +27,7 @@ ui <- fluidPage(
   
   sidebarLayout(
     sidebarPanel(
-      selectInput("prov", "Province:",
+      selectInput("prov", "Colony:",
                   c("Ontario" = "ON",
                     "North West Territories" = "NWT",
                     "New Brunswick" = "NB",
@@ -61,24 +63,35 @@ ui <- fluidPage(
 #Shiny Server
 server <- function(input, output){
   
+  #segment the data and have the subsets be reactive
   target_data <- reactive({
     a <- subset(newdata, newdata$prov %in% input$prov)
     a <- droplevels(a)
     r <- subset(a, a$temp %in% input$temp)
+    r$labs <- "df1"
     b <- subset(a, a$temp %in% input$temp1)
+    b$labs <- "df2"
     d <- rbind(r,b)
     d <- droplevels(d)
+    
     return(d)
   })
   
-  # Reactive expression to create data frame of all input values ---
+  # Reactive expression to create data frame of all input values 
   output$budwormplot <- renderImage({
-    
+    #create the horizontal line
     outfile <- tempfile('tempe.gif')
-    
-    tempe <- ggplot(target_data(), aes(progress, individual, group = individual, shape = temp)) + 
+    df <- target_data()
+    d1 <- (df
+          %>% filter(labs=="df2" & (temp == input$temp1))
+          %>% pull(individual)
+          %>% as.numeric()
+          %>% max()
+    )
+    #Create the graphic
+    tempe <- ggplot(df, aes(progress, individual, group = individual, shape = temp)) + 
       geom_point(size = 2, aes(color = stage), stroke = 2) + 
-      scale_color_manual(values = cbPalette[c(7, 2, 5, 4, 3, 6, 8)])+
+      scale_color_manual(values = cbPalette)+
       scale_shape_manual(values = c(1,16)) +
       transition_reveal(day) + 
       coord_cartesian(clip = 'off') + 
@@ -87,11 +100,12 @@ server <- function(input, output){
             axis.text.y = element_blank(),
             axis.ticks.y = element_blank(),
             text = element_text(size=15)) + 
-      labs(colour = "Stage", x = "Larval Stage Progression", y = "Budworm",
-           title = "Development of Budworm Larvae Through Time", shape = "Temperature")+
-      scale_x_continuous(breaks = 0:5, labels = c("L2", "L3","L4","L5","L6","Pupa"))
+      labs(colour = "Stage", x = "Larval Stage", y = "Budworm",
+           title = "Development of Budworm Larvae Through Time", shape = "Temperature in °")+
+      scale_x_continuous(breaks = 0:5, labels = c("L2", "L3","L4","L5","L6","Pupa")) +
+      geom_hline(yintercept = d1, linetype = "dashed")
     
-    
+    #save the animation and plot it
     anim_save("tempe.gif", tempe)
     
     list(src = "tempe.gif",
@@ -104,3 +118,4 @@ server <- function(input, output){
 
 # Create Shiny app ----
 shinyApp(ui, server)
+ 
