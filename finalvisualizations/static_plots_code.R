@@ -4,7 +4,9 @@ library(colorspace)
 ## Read necessary data files ##
 allfits <- read.csv('prov_fits.csv', header = TRUE)
 ttm.df <- read.csv('ttm_df.csv', header = TRUE)
+sims.all.df <- read.csv('sd_data.csv', header = TRUE)
 
+##### Plot 2 #####
 ## Input temp vector, province and stage, and return dev rate
 pred.mod.prov <- function(temp, pr, st) {
   fit <- subset(allfits, prov == pr & stage == st)
@@ -108,12 +110,17 @@ ggplot(data = subset(dev2, stage == s),
         axis.text = element_text(size = 11),
         legend.text = element_text(size = 11))  
 
+##### Plot 3 #####
+## Change strings to dates and re-order factor levels
+sims.all.df$date <- as.Date(sims.all.df$date)
+sims.all.df$stage <- factor(sims.all.df$stage, levels = c('L2o', stages, 'Pupa'))
+sims.all.df$prov <- factor(sims.all.df$prov, levels = c('nb', 'on', 'qc', 'in'))
 
 ## Set colour scheme
-cl <- sequential_hcl(7, "ag_Sunset")
+cl <- rev(sequential_hcl(7, "BurgYl"))
 
 ## Static Plot 3 Code
-ggplot(data=subset(sims.all.df, year == 2018), 
+ggplot(data=subset(sims.all.df, year == 2014), 
             aes(x=date, y = proportion, group=stage, fill=stage)) +
   scale_fill_manual(values = cl) +
   geom_density(position="fill", stat = 'identity', lwd = 0.05) +
@@ -125,5 +132,5 @@ ggplot(data=subset(sims.all.df, year == 2018),
              labeller = labeller(prov = prov.labs)) +
   labs(y = 'Proportion of Population in Stage', 
        fill = 'Larval Stage', x = 'Date', 
-       title = '2018 Spruce Budworm Development by Location') +
+       title = '2014 Spruce Budworm Development by Location') +
   guides(alpha = FALSE)
